@@ -1,2 +1,2 @@
-# Hgr4Gc
+# HandGRC
 Hand Gesture Recognition For Gesture Control For VR
