@@ -8,12 +8,17 @@ import pandas as pd
 # Path to Motion files
 
 path_to_bvh = 'C:\\path\\to\\bvh\\'
+
+# Limiting number of digits of precision for floating point output to 4
 np.set_printoptions(precision=4, suppress=True)
 file_list = sorted(os.listdir(path_to_bvh))
 
 autodesk_list = [item for item in file_list if item.endswith('.bvh')]
 datamotion = {item: pd.DataFrame() for item in autodesk_list}
 dataiter = []
+
+# Creating an object in Blender of type "Empty" which has no geometry, but shows a visual of three axes arrows.
+# Setting this empty object Empty.M as parent, and creating Empty.R and Empty.L for right and left hands accordingly as children of Empty.M
 
 for item in autodesk_list:
     bpy.ops.object.empty_add(type='ARROWS', view_align=False, location=(0, 0, 0), layers=(True, False, False, False,
@@ -26,6 +31,7 @@ for item in autodesk_list:
                                                                                           False, False, False, False, False, False, False, False, False, False, False, False, False, False, False, False))
     bpy.data.objects['Empty'].name = "Empty.M"
 
+# Import the total frames of an animation from the bvh file 
     path_to_files = os.path.join(path_to_bvh, item)
     bpy.ops.import_anim.bvh(filepath=path_to_files, use_fps_scale=True,  axis_forward='Y', axis_up='Z',
                             update_scene_fps=True, update_scene_duration=True)
@@ -33,6 +39,9 @@ for item in autodesk_list:
     endframe = int(bpy.data.objects[it].animation_data.action.frame_range.y)
     framerange = range(0, endframe)
     bpy.context.scene.frame_end = endframe+1
+
+# Linking the empty objects created earlier by parenting them to the corresponding bones
+
     bpy.data.objects['Empty.R'].parent = bpy.data.objects[it]
     bpy.data.objects['Empty.L'].parent = bpy.data.objects[it]
     bpy.data.objects['Empty.M'].parent = bpy.data.objects[it]
@@ -44,12 +53,17 @@ for item in autodesk_list:
     bpy.data.objects['Empty.M'].parent_bone = "hip"
     R_vector = (-6.0, 6.0, 1.0)
     L_vector = (6.0, 6.0, 1.0)
+
+# Correcting the translations of empty objects
+
     bpy.data.objects['Empty.R'].matrix_local.translation.xyz = R_vector
     bpy.data.objects['Empty.L'].matrix_local.translation.xyz = L_vector
     M_root = bpy.data.objects['Empty.M'].matrix_world
+
+# Adding noise and purterbation to augment the animation data set  
+#   
     def add_noise(a):
         return(a+loc_noise)
-    #dataiter = {iter: pd.DataFrame() for iter in range(0, 20)}
     for i in range(0, 20):
         tr_noise = random.uniform(-15, 15) * np.random.rand(1, 3)
         #rot_noise = np.random.rand(1, 3)
@@ -73,9 +87,11 @@ for item in autodesk_list:
         dataiter.append(data1)
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete()
-    # print(dataframe)
-# print(datamotion)
+
+
 data = pd.concat(dataiter, axis=0)
+
+# Output of the new animation data set as a csv
 data.columns = ['X', 'Y', 'Z', 'X', 'Y', 'Z']
 
- data.to_csv('C:\\Users\\AP38100\\molab\\CSV\\08_03.csv')
+ data.to_csv('C:\\CSV\\output\\path\\Output.csv')
